@@ -1,0 +1,107 @@
+print("hello")
+q()
+install.packages("BiocManager")
+R.version
+install.packages("DESeq2")
+load("E:/Data Folder/PhD Implimentation/DEG/.RData")
+install.packages("ggplot2")
+install.packages(c("cli", "fansi", "glue", "rlang", "scales", "utf8", "vctrs"))
+install.packages("ggplot2")
+if (!require("BiocManager", quietly = TRUE))
+install.packages("BiocManager")
+R.version
+install.packages("ggplot2")
+if (!require("BiocManager", quietly = TRUE))
+install.packages("BiocManager")
+BiocManager::install()
+BiocManager::install()
+BiocManager::install(c("GenomicFeatures"))
+#installing DeSe2 library
+BiocManager::install("DESeq2")
+install.packages("RcppArmadillo")
+setwd("E:/PhD Implrmentation/DATASET/DEG/DEG 1/DEG 1.1")
+cnt <-read.csv("final_featureCount.csv", row.names = 1)
+str(cnt)  #Structure of the data
+# Calculate total mapped reads for each sample
+total_reads <- colSums(cnt)
+# Calculate CPM
+cpm_values <- sweep(cnt, 2, total_reads, "/") * 1e6
+# Set a threshold
+threshold_cpm <- 1
+# Filter out lowly expressed genes
+filtered_cpm <- cpm_values[rowSums(cpm_values >= threshold_cpm) > 0, ]
+#replace cnt with the new filtered cpm
+write.csv(filtered_cpm, "filtered_cpm.csv")
+cnt <- (read.csv("filtered_cpm.csv", row.names = 1)
+met <- read.csv("metadata.csv",row.names = 1)
+#cheking order of row names and column names
+all(colnames(cnt) == rownames(met))
+met <- read.csv("metadata.csv",row.names = 1)
+str(met)
+#making sure the row Names in colData matches to column names in final_feature
+all(colnames(cnt) %in% rownames(met))
+#cheking order of row names and column names
+all(colnames(cnt) == rownames(met))
+library(DESeq2)
+#creating datset of DeSeq
+dds <- DESeqDataSetFromMatrix(countData = cnt,
+colData = met,
+design = ~Label)
+dds
+#Removal of Low count reads (leaky expressions) - optional step
+keep <- rowSums(counts(dds)) >= 10
+dds <- dds[keep,]
+dds
+#setting Reference For DEG Analysis
+dds$Label <- relevel(dds$Label, ref = "Normal")
+deg<- DESeq(dds)
+res <- results(deg)
+write.csv(res, "final_resuls.csv")
+summary(res)
+#pvalue = 0.05
+resu0.05 <- results(deg, alpha = 0.05)
+write.csv(resu0.05, "final_results_pvalue05.csv")
+summary(resu0.05)
+library(org.Hs.eg.db)
+#Transform results to data frame
+res0.05.df <- as.data.frame(resu0.05)
+str(res0.05.df)
+res0.05.df$symbol <- mapIds(org.Hs.eg.db, rownames(res0.05.df), keytype = "ENSEMBL", column = "SYMBOL")
+res0.05.df
+str(res0.05.df)
+write.csv(res0.05.df, "final_results_o5_genenames.csv")
+# Building of PCA plot
+vsd <- vst(deg, blind = FALSE, fitType = "mean") #fittype can be emmty, local, mean
+plotPCA(vsd, intgroup = "Label")
+#Size Factor Estimation: investigate any systematic bias in the sequence data
+sizeFactors(deg)
+#Estimting the dispersion
+plotDispEsts(deg)
+#Building MA plot
+plotMA(resu0.05)
+#Getting ideal about the best genes
+library(dplyr)
+best_genes <- res0.05.df %>%
+arrange(padj)%>%
+head(10)
+best_genes
+write.csv(best_genes, "best_genes.csv")
+#valvano Plot
+vol <- res0.05.df %>%
+filter(!is.na(padj))
+library(ggplot2)
+ggplot(vol, aes(x = log2FoldChange, y = - log10(padj), color = padj <0.05 & abs(log2FoldChange)>1)) + geom_point()+
+geom_text(data = best_genes, aes(label = symbol), hjust = -0.2, vjust = 0.5)
+library(ComplexHeatmap)
+BiocManager::install("ComplexHeatmap")
+library(ComplexHeatmap)
+top_genes <- res0.05.df %>%
+arrange(padj)%>%
+head(30)
+mat <- counts(deg, normalized = T)[rownames(top_genes),]
+head(mat,5)
+mat.z <- t(apply(mat,1,scale))
+head(mat.z,5)
+colnames(mat.z) <- rownames(met)
+head(mat.z, 5)
+Heatmap(mat.z, cluster_rows = T, cluster_columns =  T, column_labels = colnames(mat.z), row_labels = top_genes$)
