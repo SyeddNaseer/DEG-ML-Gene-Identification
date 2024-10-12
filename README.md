@@ -91,8 +91,5 @@ Contributions are welcome! Please feel free to submit a pull request or open an 
 
 ## Contact
 
-For any questions or collaboration opportunities, please contact [your email address].
+For any questions or collaboration opportunities, please contact syeddnaseer@gmail.com
 
----
-
-This README provides a structured overview of your project, guiding users on its purpose, workflow, and usage. You can personalize and expand the sections based on specific details of your repository.
